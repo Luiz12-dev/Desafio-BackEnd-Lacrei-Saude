@@ -1,0 +1,12 @@
+# Ambientes e Variáveis
+.env
+.venv/
+env/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Banco de dados local (se houver)
+*.sqlite3
