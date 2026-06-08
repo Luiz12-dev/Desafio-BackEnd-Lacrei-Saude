@@ -2,10 +2,11 @@ name: Lacrei Backend CI/CD
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "staging"]
 
 jobs:
-  integracao-e-entrega:
+  lint:
+    name: 🧹 Lint (Flake8)
     runs-on: ubuntu-latest
 
     steps:
@@ -22,24 +23,107 @@ jobs:
           pip install poetry
           poetry install
 
-      - name: 🧹 Executar Lint (Flake8)
+      - name: 🧹 Executar Lint
         run: |
-          # Verifica apenas erros críticos de sintaxe no código
           poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
-      - name: 🧪 Executar Testes Automatizados
-        env:
-          SECRET_KEY: "chave-secreta-para-testes-no-github"
-          DEBUG: "True"
-        run: |
-          poetry run python manage.py test
+  tests:
+    name: 🧪 Testes Automatizados
+    runs-on: ubuntu-latest
+    needs: lint
 
-      - name: 🏗️ Executar Build (Docker)
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: lacrei_test_db
+          POSTGRES_USER: lacrei_test_user
+          POSTGRES_PASSWORD: lacrei_test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Instalar Poetry e Dependências
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: 🧪 Executar Testes
+        env:
+          SECRET_KEY: "chave-secreta-para-testes-ci"
+          DEBUG: "True"
+          DATABASE_URL: "postgres://lacrei_test_user:lacrei_test_pass@localhost:5432/lacrei_test_db"
+          ALLOWED_HOSTS: "*"
+          CORS_ALLOW_ALL_ORIGINS: "True"
+        run: |
+          poetry run python manage.py test --verbosity=2
+
+  build:
+    name: 🏗️ Build Docker
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Executar Build da Imagem Docker
         run: |
           docker build -t lacrei-backend:latest .
 
-      - name: 🚀 Executar Deploy (AWS Staging/Prod)
+  deploy-staging:
+    name: 🚀 Deploy Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/staging'
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy para Staging (Render)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
         run: |
-          echo "Validando credenciais da AWS..."
-          echo "Simulando envio da imagem Docker para o ambiente de Produção/Staging na nuvem."
-          echo "Deploy executado com sucesso!"
+          echo "=== Deploy para ambiente STAGING ==="
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            curl -s -o /dev/null -w "%{http_code}" "$RENDER_DEPLOY_HOOK"
+            echo "Deploy disparado com sucesso!"
+          else
+            echo "⚠️  RENDER_STAGING_DEPLOY_HOOK não configurado. Pulando deploy."
+          fi
+
+  deploy-production:
+    name: 🚀 Deploy Produção
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy para Produção (Render)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK }}
+        run: |
+          echo "=== Deploy para ambiente PRODUÇÃO ==="
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            curl -s -o /dev/null -w "%{http_code}" "$RENDER_DEPLOY_HOOK"
+            echo "Deploy disparado com sucesso!"
+          else
+            echo "⚠️  RENDER_PRODUCTION_DEPLOY_HOOK não configurado. Pulando deploy."
+          fi
