@@ -10,5 +10,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://lacrei_user:lacrei_pass@db:5432/lacrei_db
+      - SECRET_KEY=minha-chave-secreta-super-segura-123
+      - DEBUG=True
+      - ALLOWED_HOSTS=*
+      - CORS_ALLOW_ALL_ORIGINS=True
+    depends_on:
+      - db
+
 volumes:
   postgres_data:
