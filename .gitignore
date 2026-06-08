@@ -1,5 +1,6 @@
 # Ambientes e Variáveis
 .env
+.env.*
 .venv/
 env/
 
@@ -8,5 +9,22 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Banco de dados local (se houver)
+# Banco de dados local
 *.sqlite3
+
+# Arquivos estáticos coletados
+staticfiles/
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Docker overrides
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
