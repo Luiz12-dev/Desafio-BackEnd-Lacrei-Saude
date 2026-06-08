@@ -2,6 +2,20 @@
 
 API RESTful de Gerenciamento de Consultas Médicas, desenvolvida como parte do desafio técnico da Lacrei Saúde. A aplicação é segura, escalável e pronta para produção, com foco em impacto social para a comunidade LGBTQIAPN+.
 
+## 🌐 Acesse a API Online (Deploy)
+
+A API está hospedada e pode ser avaliada imediatamente sem necessidade de setup local. Um usuário administrador foi pré-criado para facilitar os testes.
+
+- **Swagger UI (Documentação Interativa):** [https://lacrei-api-production.onrender.com/api/docs/swagger/](https://lacrei-api-production.onrender.com/api/docs/swagger/)
+- **API Root (Navegável):** [https://lacrei-api-production.onrender.com/api/](https://lacrei-api-production.onrender.com/api/)
+- **Admin Panel:** [https://lacrei-api-production.onrender.com/admin/](https://lacrei-api-production.onrender.com/admin/)
+
+> **Credenciais de Teste:**
+> - **Usuário:** `admin`
+> - **Senha:** `admin123`
+
+---
+
 ## 🚀 Tecnologias Utilizadas
 
 | Tecnologia | Finalidade |
